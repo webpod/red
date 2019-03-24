@@ -25,16 +25,3 @@ func equals(a, b []string) bool {
 	}
 	return true
 }
-
-func diff(a, b []string) int {
-	if len(a) != len(b) {
-		return abs(len(a) - len(b))
-	}
-	count := 0
-	for i := 0; i < len(a); i++ {
-		if a[i] != b[i] {
-			count++
-		}
-	}
-	return count
-}
