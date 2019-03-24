@@ -93,6 +93,7 @@ func main() {
 				panic(err)
 			}
 			viewer.SetText(tview.TranslateANSI(string(text)))
+			viewer.ScrollToBeginning()
 			flex.AddItem(viewer, 0, 1, false)
 			app.SetFocus(viewer)
 		}
