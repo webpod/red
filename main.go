@@ -27,6 +27,7 @@ const (
 )
 
 func main() {
+	
 	duration := flag.Duration("d", 1*time.Minute, "duration of trend")
 	distance := flag.Int("distance", 3, "levenshtein distance for combining similar log entities")
 	flag.Parse()
