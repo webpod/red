@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/gdamore/tcell"
-	"github.com/hokaccha/go-prettyjson"
-	"github.com/rivo/tview"
 	"log"
 	"os"
 	"time"
+
+	"github.com/gdamore/tcell"
+	"github.com/hokaccha/go-prettyjson"
+	"github.com/rivo/tview"
 )
 
 var (
@@ -121,7 +122,8 @@ func read() {
 		var value map[string]interface{}
 		err := dec.Decode(&value)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+			app.Stop()
 		}
 
 		store.Lock()
