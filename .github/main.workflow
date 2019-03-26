@@ -1,6 +1,6 @@
-workflow "Test" {
-  on = "push"
+workflow "Build" {
   resolves = ["Golang Action"]
+  on = "push"
 }
 
 action "Golang Action" {
