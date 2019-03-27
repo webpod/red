@@ -159,7 +159,7 @@ func draw() {
 				}
 			}
 
-			for ; row < store.Len(); row++ {
+			for ; row <= store.Len(); row++ {
 				data := store.Get(row - 1)
 				table.SetCell(row, trendColumn, tview.NewTableCell(Spark(data.GetTrend())).
 					SetSelectable(false))
