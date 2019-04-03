@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"time"
@@ -11,13 +12,21 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/hokaccha/go-prettyjson"
 	"github.com/rivo/tview"
+	"github.com/satyrius/gonx"
 )
 
 var (
+	duration    time.Duration
+	distance    int
+	format      string
+	nginxConfig string
+	nginxFormat string
+	showHelp    bool
+	keys        []string
+
 	app   *tview.Application
 	table *tview.Table
 	store *Store
-	keys  []string
 )
 
 const (
@@ -26,22 +35,27 @@ const (
 	firstDataColumn
 )
 
-func main() {
-	
-	duration := flag.Duration("d", 1*time.Minute, "duration of trend")
-	distance := flag.Int("distance", 3, "levenshtein distance for combining similar log entities")
-	flag.Parse()
+func init() {
+	flag.DurationVar(&duration, "trend", 10*time.Second, "duration of trend")
+	flag.IntVar(&distance, "distance", 3, "levenshtein distance for combining similar log entities")
+	flag.StringVar(&format, "format", "json", "stdin format")
+	flag.StringVar(&nginxConfig, "nginx-config", "/etc/nginx/nginx.conf", "nginx config file")
+	flag.StringVar(&nginxFormat, "nginx-format", "main", "nginx log_format name")
+	flag.BoolVar(&showHelp, "help", false, "show help")
+}
 
+func main() {
+	flag.Parse()
 	keys = flag.Args()
-	if len(keys) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: red [key...]")
-		flag.PrintDefaults()
+
+	if showHelp {
+		flag.Usage()
 		os.Exit(2)
 	}
 
-	store = NewStore(*duration, *distance, keys)
-
+	store = NewStore(duration, distance, keys)
 	app = tview.NewApplication()
+
 	viewerOpen := false
 	viewer := tview.NewTextView().
 		SetDynamicColors(true).
@@ -58,7 +72,65 @@ func main() {
 				table.SetSelectable(true, false)
 			}
 		})
+	renderColumns()
 
+	flex := tview.NewFlex()
+	flex.AddItem(table, 0, 1, true)
+	app.SetRoot(flex, true)
+
+	showRowData := func() {
+		store.RLock()
+		row, _ := table.GetSelection()
+		if row == 0 {
+			row = 1
+		}
+		data := store.Get(row - 1).GetData()
+		store.RUnlock()
+
+		text, err := prettyjson.Marshal(data)
+		if err != nil {
+			panic(err)
+		}
+		viewer.SetText(tview.TranslateANSI(string(text)))
+		viewer.ScrollToBeginning()
+	}
+
+	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyDown || event.Key() == tcell.KeyUp {
+			table.SetSelectable(true, false)
+			if viewerOpen {
+				showRowData()
+			}
+		}
+		if event.Key() == tcell.KeyEnter && !viewerOpen {
+			viewerOpen = true
+			flex.AddItem(viewer, 0, 1, false)
+			showRowData()
+		}
+		if event.Key() == tcell.KeyEsc && viewerOpen {
+			viewerOpen = false
+			flex.RemoveItem(viewer)
+		}
+		return event
+	})
+
+	switch format {
+	case "json":
+		go read()
+	case "nginx":
+		go readNginx()
+	}
+
+	go draw()
+	go shift(duration)
+
+	err := app.Run()
+	if err != nil {
+		panic(err)
+	}
+}
+
+func renderColumns() {
 	headerCell := func(s string) *tview.TableCell {
 		return tview.NewTableCell(s).
 			SetBackgroundColor(tcell.ColorRed).
@@ -72,49 +144,18 @@ func main() {
 	for i, key := range keys {
 		table.SetCell(0, firstDataColumn+i, headerCell(key))
 	}
+}
 
-	flex := tview.NewFlex()
-	flex.AddItem(table, 0, 1, true)
-	app.SetRoot(flex, true)
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyDown || event.Key() == tcell.KeyUp {
-			table.SetSelectable(true, false)
-		}
-		if event.Key() == tcell.KeyEnter && !viewerOpen {
-			viewerOpen = true
-			store.RLock()
-			row, _ := table.GetSelection()
-			if row == 0 {
-				row = 1
-			}
-			data := store.Get(row - 1).GetData()
-			store.RUnlock()
-
-			text, err := prettyjson.Marshal(data)
-			if err != nil {
-				panic(err)
-			}
-			viewer.SetText(tview.TranslateANSI(string(text)))
-			viewer.ScrollToBeginning()
-			flex.AddItem(viewer, 0, 1, false)
-			app.SetFocus(viewer)
-		}
-		if event.Key() == tcell.KeyEsc && viewerOpen {
-			viewerOpen = false
-			app.SetFocus(table)
-			flex.RemoveItem(viewer)
-		}
-		return event
-	})
-
-	go read()
-	go draw()
-	go shift(*duration)
-
-	err := app.Run()
-	if err != nil {
-		panic(err)
+func update(value map[string]interface{}) {
+	if len(keys) == 0 {
+		keys = mapKeys(value)
+		store.SetKeys(keys)
+		renderColumns()
 	}
+
+	store.Lock()
+	store.Push(value)
+	store.Unlock()
 }
 
 func read() {
@@ -127,9 +168,44 @@ func read() {
 			app.Stop()
 		}
 
-		store.Lock()
-		store.Push(value)
-		store.Unlock()
+		update(value)
+	}
+}
+
+func readNginx() {
+	config, err := os.Open(nginxConfig)
+	if err != nil {
+		panic(err)
+	}
+	defer config.Close()
+
+	reader, err := gonx.NewNginxReader(os.Stdin, config, nginxFormat)
+	if err != nil {
+		panic(err)
+	}
+	for {
+		rec, err := reader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+		// Process the record... e.g.
+		fmt.Printf("Parsed entry: %+v\n", rec)
+	}
+}
+
+func readCommon(format string) {
+	reader := gonx.NewReader(os.Stdin, format)
+	for {
+		rec, err := reader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+		// Process the record... e.g.
+		fmt.Printf("Parsed entry: %+v\n", rec)
 	}
 }
 

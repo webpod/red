@@ -8,4 +8,5 @@ require (
 	github.com/mattn/go-isatty v0.0.7 // indirect
 	github.com/rivo/tview v0.0.0-20190319111340-8d5eba0c2f51
 	github.com/rivo/uniseg v0.0.0-20190313204849-f699dde9c340 // indirect
+	github.com/satyrius/gonx v1.3.0
 )

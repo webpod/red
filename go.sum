@@ -19,6 +19,8 @@ github.com/rivo/tview v0.0.0-20190319111340-8d5eba0c2f51 h1:FEnZgBwXtLYXcQD3w5X1
 github.com/rivo/tview v0.0.0-20190319111340-8d5eba0c2f51/go.mod h1:J4W+hErFfITUbyFAEXizpmkuxX7ZN56dopxHB4XQhMw=
 github.com/rivo/uniseg v0.0.0-20190313204849-f699dde9c340 h1:nOZbL5f2xmBAHWYrrHbHV1xatzZirN++oOQ3g83Ypgs=
 github.com/rivo/uniseg v0.0.0-20190313204849-f699dde9c340/go.mod h1:SOLvOL4ybwgLJ6TYoX/rtaJ8EGOulH4XU7E9/TLrTCE=
+github.com/satyrius/gonx v1.3.0 h1:FSAzv/VRWvF8EVBxm5Jtd6GLsEjIuaDxwctx6WpVSaY=
+github.com/satyrius/gonx v1.3.0/go.mod h1:+r8KNe5d2tjkZU+DfhERo0G6KxkGih+1qYF6tqLHwvk=
 golang.org/x/sys v0.0.0-20190222072716-a9d3bda3a223 h1:DH4skfRX4EBpamg7iV4ZlCpblAHI6s6TDM39bFZumv8=
 golang.org/x/sys v0.0.0-20190222072716-a9d3bda3a223/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/text v0.3.0 h1:g61tztE5qeGQ89tm6NTjjM9VPIm088od1l6aSorWRWg=

@@ -50,6 +50,10 @@ func NewStore(duration time.Duration, distance int, keys []string) *Store {
 	}
 }
 
+func (s *Store) SetKeys(keys []string) {
+	s.keys = keys
+}
+
 func (s *Store) Push(value map[string]interface{}) {
 	key := s.Key(value)
 	for i := range s.rows {
