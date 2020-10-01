@@ -12,7 +12,7 @@ Pipe JSON stream logs into _red_ and specify a few fields to display. For exampl
 kubectl logs ... | red level message
 ```
 
-You will see combined logs with trend sparkline and total count.
+You will see combined logs with trend sparkline and total count. You will have an awesome experience with us. 
 
 ## Install
 
