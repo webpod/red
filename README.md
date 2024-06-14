@@ -19,7 +19,7 @@ You will see combined logs with trend sparkline and total count.
 ## Install
 
 ```bash
-go get github.com/antonmedv/red
+go install github.com/antonmedv/red@latest
 ```
 
 ## License
