@@ -6,8 +6,6 @@ _Red_ is a terminal log analysis tools.
 
 ## Usage
 
-<a href="https://webpod.dev/?from=red"><img src="https://webpod.dev/img/banner.png" alt="Webpod - deploy JavaScript apps" width="190" align="right"></a>
-
 Pipe JSON stream logs into _red_ and specify a few fields to display. For example using with kubernetes:
 
 ```bash
